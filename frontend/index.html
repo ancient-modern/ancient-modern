@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+	<title>SOCKET-TEST</title>
+	<script src="lib/echarts.min.js"></script>
+	<script src="lib/jquery.min.js"></script>
+	<script src="lib/dexie.min.js"></script>
+	<script src="lib/socket.io.min.js"></script>
+</head>
+
+<body>
+	<script>
+		$(document).ready(function () {
+			const socket = io("http://test-ancient-modern/");
+			socket.on('connection_response',(data)=>{
+				console.log(data)
+			})
+			
+			socket.on('api_event',(data)=>{
+				console.log(data)
+			})
+		})
+	</script>
+</body>

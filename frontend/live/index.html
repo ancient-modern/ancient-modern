@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实盘因子信号分析</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 左侧主视图区域 (85%) -->
+        <div class="main-view">
+            <!-- 数据图表展示区域 -->
+            <div class="charts-container">
+                <!-- K线图区域 -->
+                <div class="chart-section" id="kline-section">
+                    <div class="chart-header">
+                        <h3>K线图</h3>
+                        <div class="chart-status" id="kline-status">
+                            开盘: -- 最高: -- 最低: -- 收盘: -- MA3: -- MA5: -- MA10: -- MA15: --
+                        </div>
+                    </div>
+                    <div class="chart-container" id="kline-chart"></div>
+                    <div class="chart-resize-handle" data-target="kline-section"></div>
+                </div>
+
+                <!-- 成交量区域 -->
+                <div class="chart-section" id="volume-section">
+                    <div class="chart-header">
+                        <h3>成交量</h3>
+                        <div class="chart-status" id="volume-status">
+                            成交量: -- 5分钟均量: -- 10分钟均量: -- 15分钟均量: --
+                        </div>
+                    </div>
+                    <div class="chart-container" id="volume-chart"></div>
+                    <div class="chart-resize-handle" data-target="volume-section"></div>
+                </div>
+
+                <!-- MACD区域 -->
+                <div class="chart-section" id="macd-section">
+                    <div class="chart-header">
+                        <h3>MACD</h3>
+                        <div class="chart-status" id="macd-status">
+                            DIF: -- DEA: -- MACD: --
+                        </div>
+                    </div>
+                    <div class="chart-container" id="macd-chart"></div>
+                    <div class="chart-resize-handle" data-target="macd-section"></div>
+                </div>
+
+                <!-- KDJ区域 -->
+                <div class="chart-section" id="kdj-section">
+                    <div class="chart-header">
+                        <h3>KDJ</h3>
+                        <div class="chart-status" id="kdj-status">
+                            K: -- D: -- J: --
+                        </div>
+                    </div>
+                    <div class="chart-container" id="kdj-chart"></div>
+                    <div class="chart-resize-handle" data-target="kdj-section"></div>
+                </div>
+            </div>
+
+            <!-- 底部工具栏 -->
+            <div class="toolbar">
+                <div class="indicator-controls">
+                    <span class="indicator-btn" data-target="volume-section">成交量</span>
+                    <span class="indicator-btn" data-target="macd-section">MACD</span>
+                    <span class="indicator-btn" data-target="kdj-section">KDJ</span>
+                </div>
+                <div class="toolbar-status">
+                    <span id="current-time">--:--:--</span>
+                    <span id="data-status">数据连接正常</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧控制面板 (15%) -->
+        <div class="sidebar">
+            <!-- 实时5档价格视图 -->
+            <div class="sidebar-panel" id="price-panel">
+                <div class="panel-header">
+                    <h4>实时5档价格</h4>
+                    <button class="panel-toggle" data-target="price-panel">−</button>
+                </div>
+                <div class="panel-content">
+                    <div class="price-table">
+                        <div class="price-header">
+                            <span>档位</span>
+                            <span>买价</span>
+                            <span>买量</span>
+                            <span>卖价</span>
+                            <span>卖量</span>
+                        </div>
+                        <div class="price-rows" id="price-data">
+                            <!-- 动态生成价格数据 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 测试账户1视图 -->
+            <div class="sidebar-panel" id="account1-panel">
+                <div class="panel-header">
+                    <h4>测试账户1</h4>
+                    <button class="panel-toggle" data-target="account1-panel">−</button>
+                </div>
+                <div class="panel-content">
+                    <div class="account-info">
+                        <div class="info-row">
+                            <span>账户余额:</span>
+                            <span id="account1-balance">¥100,000.00</span>
+                        </div>
+                        <div class="info-row">
+                            <span>可用资金:</span>
+                            <span id="account1-available">¥85,000.00</span>
+                        </div>
+                        <div class="info-row">
+                            <span>持仓市值:</span>
+                            <span id="account1-market-value">¥15,000.00</span>
+                        </div>
+                        <div class="info-row">
+                            <span>今日盈亏:</span>
+                            <span id="account1-pnl" class="profit">+¥500.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 测试账户2视图 -->
+            <div class="sidebar-panel" id="account2-panel">
+                <div class="panel-header">
+                    <h4>测试账户2</h4>
+                    <button class="panel-toggle" data-target="account2-panel">−</button>
+                </div>
+                <div class="panel-content">
+                    <div class="account-info">
+                        <div class="info-row">
+                            <span>账户余额:</span>
+                            <span id="account2-balance">¥50,000.00</span>
+                        </div>
+                        <div class="info-row">
+                            <span>可用资金:</span>
+                            <span id="account2-available">¥30,000.00</span>
+                        </div>
+                        <div class="info-row">
+                            <span>持仓市值:</span>
+                            <span id="account2-market-value">¥20,000.00</span>
+                        </div>
+                        <div class="info-row">
+                            <span>今日盈亏:</span>
+                            <span id="account2-pnl" class="loss">-¥200.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 测试账户3视图 -->
+            <div class="sidebar-panel" id="account3-panel">
+                <div class="panel-header">
+                    <h4>测试账户3</h4>
+                    <button class="panel-toggle" data-target="account3-panel">−</button>
+                </div>
+                <div class="panel-content">
+                    <div class="account-info">
+                        <div class="info-row">
+                            <span>账户余额:</span>
+                            <span id="account3-balance">¥200,000.00</span>
+                        </div>
+                        <div class="info-row">
+                            <span>可用资金:</span>
+                            <span id="account3-available">¥150,000.00</span>
+                        </div>
+                        <div class="info-row">
+                            <span>持仓市值:</span>
+                            <span id="account3-market-value">¥50,000.00</span>
+                        </div>
+                        <div class="info-row">
+                            <span>今日盈亏:</span>
+                            <span id="account3-pnl" class="profit">+¥1,200.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入依赖库 -->
+    <script src="../lib/jquery.min.js"></script>
+    <script src="../lib/echarts.min.js"></script>
+    <script src="../lib/dexie.min.js"></script>
+    
+    <!-- 依赖检测和回退机制 -->
+    <script src="js/dependency-loader.js"></script>
+    
+    <!-- 自定义脚本 -->
+    <script src="js/data-storage.js"></script>
+    <script src="js/chart-components.js"></script>
+    <script src="js/layout-manager.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

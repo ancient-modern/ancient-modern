@@ -1,0 +1,427 @@
+/* 交易数据可视化平台样式文件 */
+
+/* 全局样式重置 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #2a2a2b;
+    color: #e6e6e6;
+    overflow: hidden;
+    height: 100vh;
+}
+
+/* 主容器布局 */
+.container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* 左侧主视图区域 (85%) */
+.main-view {
+    flex: 0 0 85%;
+    display: flex;
+    flex-direction: column;
+    background-color: #2a2a2b;
+    border-right: 1px solid #606063;
+}
+
+/* 图表容器区域 */
+.charts-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 5px;
+    gap: 4px;
+    overflow: hidden;
+}
+
+/* 图表区域 */
+.chart-section {
+    background-color: #3e3e40;
+    border: 1px solid #606063;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    min-height: 200px;
+    position: relative;
+}
+
+.chart-section.hidden {
+    display: none;
+}
+
+/* K线图区域占更大空间 */
+#kline-section {
+    flex: 3;
+}
+
+/* 其他指标图表 */
+#volume-section,
+#macd-section,
+#kdj-section {
+    flex: 1;
+}
+
+/* 图表头部 */
+.chart-header {
+    padding: 5px 5px;
+    border-bottom: 1px solid #606063;
+    background-color: #3e3e40;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chart-header h3 {
+    font-size: 12px;
+    font-weight: 500;
+    color: #e6e6e6;
+}
+
+.chart-status {
+    font-size: 12px;
+    color: #e6e6e6;
+    /* font-family: 'Courier New', monospace; */
+}
+
+/* 图表容器 */
+.chart-container {
+    flex: 1;
+    position: relative;
+    min-height: 170px;
+}
+
+/* 图表调整手柄 */
+.chart-resize-handle {
+    height: 2px;
+    background-color: #606063;
+    cursor: ns-resize;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    transition: background-color 0.2s;
+}
+
+.chart-resize-handle:hover {
+    background-color: #00a0d3;
+}
+
+/* 底部工具栏 */
+.toolbar {
+    height: 28px;
+    background-color: #3e3e40;
+    border-top: 1px solid #606063;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 5px;
+    flex-shrink: 0;
+}
+
+.indicator-controls {
+    display: flex;
+    gap: 6px;
+}
+
+.indicator-btn {
+    width: 40px;
+    background-color: #3e3e40;
+    border: 1px solid #3e3e40;
+    color: #e6e6e6;
+    padding: 1px 1px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.indicator-btn:hover {
+    color: #00a0d3;
+    /* background-color: #00a0d3;
+    border-color: #00a0d3; */
+}
+
+.indicator-btn.active {
+    color: #00a0d3;
+    /* background-color: #00a0d3;
+    border-color: #00a0d3; */
+}
+
+.toolbar-status {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: #b3b3b3;
+}
+
+/* 右侧控制面板 (15%) */
+.sidebar {
+    flex: 0 0 15%;
+    background-color: #3e3e40;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* 侧边栏面板 */
+.sidebar-panel {
+    flex: 1;
+    border-bottom: 1px solid #606063;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.sidebar-panel:last-child {
+    border-bottom: none;
+}
+
+.sidebar-panel.collapsed .panel-content {
+    display: none;
+}
+
+.sidebar-panel.collapsed {
+    flex: 0 0 auto;
+}
+
+/* 面板头部 */
+.panel-header {
+    background-color: #2a2a2b;
+    padding: 8px 12px;
+    border-bottom: 1px solid #606063;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.panel-header h4 {
+    font-size: 13px;
+    font-weight: 500;
+    color: #e6e6e6;
+}
+
+.panel-toggle {
+    background: none;
+    border: none;
+    color: #b3b3b3;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.panel-toggle:hover {
+    color: #00a0d3;
+}
+
+/* 面板内容 */
+.panel-content {
+    flex: 1;
+    padding: 8px;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+/* 价格表格 */
+.price-table {
+    font-size: 12px;
+    width: 100%;
+}
+
+.price-header {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+    gap: 4px;
+    padding: 4px;
+    background-color: #2a2a2b;
+    border-radius: 2px;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.price-header span {
+    text-align: center;
+    color: #b3b3b3;
+}
+
+.price-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.price-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+    gap: 4px;
+    padding: 2px 4px;
+    border-radius: 2px;
+    background-color: rgba(96, 96, 99, 0.1);
+}
+
+.price-row span {
+    text-align: center;
+    /* font-family: 'Courier New', monospace; */
+}
+
+.price-buy {
+    color: #00da3c;
+}
+
+.price-sell {
+    color: #ec0000;
+}
+
+/* 账户信息 */
+.account-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(96, 96, 99, 0.3);
+    font-size: 12px;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-row span:first-child {
+    color: #b3b3b3;
+}
+
+.info-row span:last-child {
+    /* font-family: 'Courier New', monospace; */
+    font-weight: 500;
+}
+
+/* 盈亏颜色 */
+.profit {
+    color: #00da3c !important;
+}
+
+.loss {
+    color: #ec0000 !important;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+    .container {
+        flex-direction: column;
+    }
+    
+    .main-view {
+        flex: 1;
+        border-right: none;
+        border-bottom: 1px solid #606063;
+    }
+    
+    .sidebar {
+        flex: 0 0 200px;
+        flex-direction: row;
+    }
+    
+    .sidebar-panel {
+        flex: 1;
+        border-bottom: none;
+        border-right: 1px solid #606063;
+    }
+    
+    .sidebar-panel:last-child {
+        border-right: none;
+    }
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #2a2a2b;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #606063;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #00a0d3;
+}
+
+/* 动画和过渡效果 */
+.chart-section,
+.sidebar-panel {
+    transition: all 0.3s ease;
+}
+
+.indicator-btn,
+.panel-toggle {
+    transition: all 0.2s ease;
+}
+
+/* 加载状态 */
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #b3b3b3;
+    font-size: 12px;
+}
+
+.loading::after {
+    content: '';
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid #606063;
+    border-top: 2px solid #00a0d3;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 8px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 错误状态 */
+.error {
+    color: #ec0000;
+    font-size: 12px;
+    text-align: center;
+    padding: 20px;
+}
+
+/* 数据更新动画 */
+.data-updated {
+    animation: flash 0.5s ease-in-out;
+}
+
+@keyframes flash {
+    0%, 100% { background-color: transparent; }
+    50% { background-color: rgba(0, 160, 211, 0.2); }
+}

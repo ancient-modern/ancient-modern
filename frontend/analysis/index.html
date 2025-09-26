@@ -1,0 +1,1884 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计算因子分析</title>
+    <script src="../lib/echarts.min.js"></script>
+    <script src="../lib/jquery.min.js"></script>
+    <script src="../lib/dexie.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f5;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 5px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .toolbar {
+            background-color: #fff;
+            padding: 3.75px 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toolbar-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toolbar-item label {
+            font-size: 13px;
+            color: #333;
+            white-space: nowrap;
+            font-weight: 500;
+        }
+
+        .toolbar-item input[type="datetime-local"],
+        .toolbar-item select {
+            padding: 3px 12px;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.3s;
+            min-width: 100px;
+        }
+
+        .toolbar-item input[type="datetime-local"]:focus,
+        .toolbar-item select:focus {
+            border-color: #409eff;
+            box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+        }
+
+        .toolbar-item button {
+            padding: 3px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background-color: #409eff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #66b1ff;
+        }
+
+        .btn-primary:disabled {
+            background-color: #a0cfff;
+            cursor: not-allowed;
+        }
+
+        .btn-default {
+            background-color: #fff;
+            color: #333;
+            border: 1px solid #dcdfe6;
+        }
+
+        .btn-default:hover {
+            color: #409eff;
+            border-color: #c6e2ff;
+            background-color: #ecf5ff;
+        }
+
+        /* 深色主题样式 */
+        body.dark-theme {
+            background-color: #1a1a1a;
+            color: #e4e7ed;
+        }
+
+        body.dark-theme .container {
+            background-color: #1a1a1a;
+        }
+
+        body.dark-theme .toolbar {
+            background-color: #2d2d2d;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        body.dark-theme .toolbar-item label {
+            color: #e4e7ed;
+        }
+
+        body.dark-theme .toolbar-item input[type="datetime-local"],
+        body.dark-theme .toolbar-item select {
+            background-color: #3d3d3d;
+            border-color: #4c4d4f;
+            color: #e4e7ed;
+        }
+
+        body.dark-theme .toolbar-item input[type="datetime-local"]:focus,
+        body.dark-theme .toolbar-item select:focus {
+            border-color: #409eff;
+            background-color: #3d3d3d;
+        }
+
+        body.dark-theme .btn-default {
+            background-color: #3d3d3d;
+            color: #e4e7ed;
+            border-color: #4c4d4f;
+        }
+
+        body.dark-theme .btn-default:hover {
+            color: #409eff;
+            border-color: #409eff;
+            background-color: #2d4a87;
+        }
+
+        body.dark-theme .chart-container {
+            background-color: #2d2d2d;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        body.dark-theme .chart-item {
+            background-color: #1e1e1e;
+            border-color: #3d3d3d;
+        }
+
+        body.dark-theme .loading {
+            color: #909399;
+        }
+
+        .chart-container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            flex: 1;
+            min-height: 0;
+            padding: 1px 1px 1px 1px;
+            box-sizing: border-box;
+        }
+
+        .chart-item {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .loading {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 14px;
+            color: #666;
+            z-index: 1000;
+        }
+
+        /* 音乐播放器风格按钮 */
+        #prev-btn,
+        #play-btn,
+        #next-btn {
+            width: 36px;
+            height: 24px;
+            /* border-radius: 50%; */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            font-size: 13px;
+        }
+
+        #play-btn {
+            background-color: #1db954;
+            /* 音乐播放器常用的绿色 */
+            border: none;
+        }
+
+        #play-btn:hover {
+            background-color: #1ed760;
+        }
+
+        body.dark-theme .btn-default:hover {
+            color: #409eff;
+            border-color: #409eff;
+            background-color: #4c4d4f;
+        }
+
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 5px;
+            border-radius: 3px;
+            width: 95%;
+            max-width: 1000px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .modal-body {
+            padding: 10px 0;
+        }
+
+        .modal-footer {
+            padding: 10px 0;
+            border-top: 1px solid #eee;
+            margin-top: 20px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .config-group {
+            margin-bottom: 15px;
+        }
+
+        .config-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .config-group input[type="number"],
+        .config-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .config-group input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        /* 深色主题下的模态框样式 */
+        body.dark-theme .modal-content {
+            background-color: #2d2d2d;
+            color: #e4e7ed;
+        }
+
+        body.dark-theme .modal-header {
+            border-bottom-color: #4c4d4f;
+        }
+
+        body.dark-theme .modal-header h2 {
+            color: #e4e7ed;
+        }
+
+        body.dark-theme .modal-footer {
+            border-top-color: #4c4d4f;
+        }
+
+        body.dark-theme .config-group label {
+            color: #e4e7ed;
+        }
+
+        body.dark-theme .config-group input[type="number"],
+        body.dark-theme .config-group select {
+            background-color: #3d3d3d;
+            border-color: #4c4d4f;
+            color: #e4e7ed;
+        }
+
+        .symbol-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 180px;
+            /* 设置固定宽度，与其他输入框保持一致 */
+        }
+
+        /* 输入框基础样式 */
+        #symbol-input {
+            width: 100%;
+            height: 24px;
+            padding: 0 12px;
+            border: 1px solid #409eff;
+            border-radius: 4px;
+            background-color: #fff;
+            color: #606266;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+            font-size: 13px;
+        }
+
+        /* 输入框聚焦样式 */
+        #symbol-input:focus {
+            outline: none;
+            border-color: #409eff;
+            box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+        }
+
+        /* 输入框占位符样式 */
+        #symbol-input::placeholder {
+            color: #409eff;
+        }
+
+        /* 结果下拉列表样式 */
+        .symbol-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 结果项样式 */
+        .symbol-result-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            color: #606266;
+            font-size: 13px;
+        }
+
+        .symbol-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .symbol-result-item:hover {
+            background-color: #f5f5f5;
+        }
+
+        /* 高亮选中项 */
+        .symbol-result-item.highlight {
+            background-color: #ecf5ff;
+            color: #409eff;
+        }
+
+        .symbol-results.hidden {
+            display: none;
+        }
+
+        /* 深色主题样式 */
+        body.dark-theme #symbol-input {
+            background-color: #3d3d3d;
+            border-color: #4c4d4f;
+            color: #e4e7ed;
+        }
+
+        body.dark-theme #symbol-input:focus {
+            border-color: #409eff;;
+            box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
+        }
+
+        body.dark-theme #symbol-input::placeholder {
+            color: #909399;
+        }
+
+        body.dark-theme .symbol-results {
+            background-color: #3d3d3d;
+            border-color: #4c4d4f;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        body.dark-theme .symbol-result-item {
+            border-bottom-color: #4c4d4f;
+            color: #e4e7ed;
+        }
+
+        body.dark-theme .symbol-result-item:hover {
+            background-color: #4c4d4f;
+        }
+
+        body.dark-theme .symbol-result-item.highlight {
+            background-color: #2d4a87;
+            color: #409eff;
+        }
+
+        .toolbar-item input[type="datetime-local"],
+        .toolbar-item select {
+            padding: 3px 12px;
+            border: 1px solid #409eff;
+            /* 浅绿色边框 */
+            border-radius: 3px;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.3s;
+            min-width: 100px;
+        }
+
+        /* 为factor-select下拉列表设置固定宽度 */
+        #factor-select {
+            width: 140px;
+            /* 设置固定宽度 */
+            min-width: 140px;
+            /* 确保最小宽度也为固定值 */
+        }
+
+        .toolbar-item input[type="datetime-local"]:focus,
+        .toolbar-item select:focus {
+            border-color: #409eff;
+            box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+        }
+
+
+        /* 状态栏样式 */
+        #status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: #333;
+        }
+
+        #status-bar > div {
+            padding: 0 5px;
+        }
+
+        /* 历史记录样式 */
+        #status-bar > div:last-child {
+            margin-left: auto;
+            cursor: pointer;
+        }
+
+        #status-bar > div:last-child:hover {
+            color: #409eff;
+        }
+
+        /* 深色主题下的状态栏样式 */
+        body.dark-theme #status-bar {
+            background-color: #2d2d2d;
+            color: #e4e7ed;
+            border-top-color: #4c4d4f;
+        }
+
+        body.dark-theme #status-bar > div:last-child:hover {
+            color: #66b1ff;
+        }
+
+        /* 历史记录表格样式 */
+        #history-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        #history-table th,
+        #history-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            word-wrap: break-word;
+        }
+
+        .history-col-stock {
+            width: 12%;
+        }
+
+        .history-col-start {
+            width: 15%;
+        }
+
+        .history-col-end {
+            width: 15%;
+        }
+
+        .history-col-db {
+            width: 10%;
+        }
+
+        .history-col-factor {
+            width: 10%;
+        }
+
+        .history-col-type {
+            width: 10%;
+        }
+
+        .history-col-color {
+            width: 8%;
+        }
+
+        .history-col-width {
+            width: 10%;
+        }
+
+        /* 深色主题下的表格样式 */
+        body.dark-theme #history-table th,
+        body.dark-theme #history-table td {
+            border-bottom-color: #4c4d4f;
+        }
+
+        /* 状态栏样式 */
+        #status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #66b1ff;
+            padding: 5px 10px;
+            border-top: 1px solid #66b1ff;
+            display: flex;
+            justify-content: flex-end;
+            gap: 20px;
+        }
+
+        .status-bar-content {
+            display: flex;
+            gap: 20px;
+        }
+
+        .status-item {
+            color: white;
+            cursor: pointer;
+        }
+
+        .status-item:hover {
+            color: #e6f7ff;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .toolbar-item {
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+    <!-- 工具栏 -->
+    <div class="toolbar">
+        <div class="toolbar-item">
+            <label for="symbol-input">股票名称(代码):</label>
+            <div class="symbol-input-wrapper">
+                <input type="text" id="symbol-input" placeholder="请输入股票代码或名称" value="五 粮 液[000858]"
+                       autocomplete="off">
+                <input type="hidden" id="symbol-hidden" value="SZSE.000858">
+                <div id="symbol-results" class="symbol-results hidden"></div>
+            </div>
+        </div>
+        <div class="toolbar-item">
+            <label for="start-time">开始时间:</label>
+            <input type="datetime-local" id="start-time" step="1">
+        </div>
+        <div class="toolbar-item">
+            <label for="end-time">结束时间:</label>
+            <input type="datetime-local" id="end-time" step="1">
+        </div>
+        <div class="toolbar-item">
+            <label for="factor-database-select">因子库:</label>
+            <select id="factor-database-select">
+            </select>
+        </div>
+        <div class="toolbar-item">
+            <label for="factor-select">因子:</label>
+            <select id="factor-select">
+            </select>
+        </div>
+        <div class="toolbar-item">
+            <label for="grid-select">数据视图:</label>
+            <select id="grid-select">
+            </select>
+        </div>
+        <div class="toolbar-item">
+            <label for="view-type-select">视图类型:</label>
+            <select id="view-type-select">
+                <option value="line">折线图</option>
+                <option value="bar">柱状图</option>
+            </select>
+        </div>
+        <div class="toolbar-item">
+            <button id="query-btn" class="btn-primary">查询数据</button>
+        </div>
+        <div class="toolbar-item">
+            <button id="cg-btn" class="btn-primary">图像转换</button>
+        </div>
+        <div class="toolbar-item">
+            <button id="color-config-btn" class="btn-primary">配置颜色</button>
+        </div>
+        <div class="toolbar-item">
+            <button id="delete-btn" class="btn-primary">删除指标数据</button>
+        </div>
+        <div class="toolbar-item">
+            <button id="save-page-layout-btn" class="btn-primary">保存页面布局</button>
+        </div>
+        <div class="toolbar-item" style="margin-left: auto;">
+            <button id="prev-btn" class="btn-primary">◀</button>
+        </div>
+        <div class="toolbar-item">
+            <button id="play-btn" class="btn-primary">▶</button>
+        </div>
+        <div class="toolbar-item">
+            <button id="next-btn" class="btn-primary">▶</button>
+        </div>
+        <div class="toolbar-item">
+            <button id="theme-toggle" class="btn-default">🌙</button>
+        </div>
+        <div class="toolbar-item">
+            <button id="config-btn" class="btn-default">⚙️</button>
+        </div>
+    </div>
+
+    <!-- 图表容器 -->
+    <div class="chart-container">
+        <div class="chart-item">
+            <div id="multi-grid-chart" style="width: 100%; height: 100%;"></div>
+            <div class="loading" id="chart-loading">加载中...</div>
+        </div>
+    </div>
+</div>
+
+<!-- 通用配置模态框 -->
+<div id="config-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>⚙️ 配置选项</h2>
+        </div>
+        <div class="modal-body">
+            <div class="config-group">
+                <label for="play-interval">自动播放间隔（秒）:</label>
+                <input type="number" id="play-interval" min="1" max="30" value="3">
+            </div>
+            <div class="config-group">
+                <label for="chart-theme">图表主题:</label>
+                <select id="chart-theme">
+                    <option value="auto">跟随系统</option>
+                    <option value="light">浅色主题</option>
+                    <option value="dark">深色主题</option>
+                </select>
+            </div>
+            <div class="config-group">
+                <label>
+                    <input type="checkbox" id="show-grid" checked>
+                    显示网格线
+                </label>
+            </div>
+            <div class="config-group">
+                <label>
+                    <input type="checkbox" id="show-legend" checked>
+                    显示图例
+                </label>
+            </div>
+            <div class="config-group">
+                <label for="data-points">数据点显示:</label>
+                <select id="data-points">
+                    <option value="show">显示</option>
+                    <option value="hide">隐藏</option>
+                    <option value="hover">仅悬停显示</option>
+                </select>
+            </div>
+            <!-- 添加网格数量配置项 -->
+            <div class="config-group">
+                <label for="grid-count">数据视图数量:</label>
+                <select id="grid-count">
+                    <option value="1" selected>1个</option>
+                    <option value="2">2个</option>
+                    <option value="3">3个</option>
+                    <option value="4">4个</option>
+                    <option value="5">5个</option>
+                    <option value="6">6个</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="cancel-config" class="btn-default">取消</button>
+            <button id="save-config" class="btn-primary">保存配置</button>
+        </div>
+    </div>
+</div>
+
+<!-- SERIES配置模态框 -->
+<div id="color-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>🎨 配置样式</h2>
+        </div>
+        <div class="modal-body">
+            <div class="config-group">
+                <label for="series-color">颜色:</label>
+                <input type="color" id="series-color" value="#409eff">
+            </div>
+            <div class="config-group" id="line-width-group">
+                <label for="line-width">线条粗细:</label>
+                <input type="range" id="line-width" min="0.1" max="1.5" step="0.1" value="0.8">
+                <span id="line-width-value">2</span>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="cancel-color" class="btn-default">取消</button>
+            <button id="save-color" class="btn-primary">应用</button>
+        </div>
+    </div>
+</div>
+
+<!--查询历史modal-->
+<div id="history-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>📋 历史记录</h2>
+        </div>
+        <div class="modal-body">
+            <table id="history-table" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                <tr>
+                    <th class="history-col-stock">股票</th>
+                    <th class="history-col-start">开始时间</th>
+                    <th class="history-col-end">结束时间</th>
+                    <th class="history-col-db">因子库</th>
+                    <th class="history-col-factor">因子视图</th>
+                    <th class="history-col-type">图形类型</th>
+                    <th class="history-col-color">颜色</th>
+                    <th class="history-col-width">线条粗细</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="modal-footer">
+            <button id="clear-history" class="btn-danger" style="margin-right: 10px;">清空历史</button>
+            <button id="close-history" class="btn-default">关闭</button>
+        </div>
+    </div>
+</div>
+
+<!-- 状态栏 -->
+<div id="status-bar">
+    <div class="status-bar-content">
+        <div id="query-history-div" class="status-item">查询记录: <span id="history-count">0</span> 条</div>
+        <div id="layout-history-div" class="status-item">布局记录: <span id="layout-history-count">0</span> 条</div>
+        <div class="status-item">当前时间: <span id="current-time"></span></div>
+    </div>
+</div>
+
+<script>
+    const uri = {
+        'base-stock': '/api/analysis/v1/data/base-stock',
+        'factor-query': '/api/analysis/v1/factor/query'
+    }
+
+    const db = new Dexie('finance');
+
+    $(document).ready(function () {
+        db.version(2).stores({
+            query_history: '++time, db, tb, cs, grid, line_width, color, view_type, start_time, end_time',
+            page_layout: '++save_time, grid_count, &queries'
+        });
+
+        // 初始化图表实例
+        const multiGridChart = echarts.init(document.getElementById('multi-grid-chart'));
+
+        // 初始化时间选择器
+        const today = new Date();
+
+        const fmt_start_time = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            // const hours = String(date.getHours()).padStart(2, '0');
+            // const minutes = String(date.getMinutes()).padStart(2, '0');
+            // const seconds = String(date.getSeconds()).padStart(2, '0');
+            const hours = '09';
+            const minutes = '30';
+            const seconds = '00';
+            return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+        };
+
+        const fmt_end_time = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            // const hours = String(date.getHours()).padStart(2, '0');
+            // const minutes = String(date.getMinutes()).padStart(2, '0');
+            // const seconds = String(date.getSeconds()).padStart(2, '0');
+            const hours = '14';
+            const minutes = '57';
+            const seconds = '00';
+            return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+        };
+
+        $('#start-time').val(fmt_start_time(new Date(today.getTime() - 24 * 60 * 60 * 1000)));
+        $('#end-time').val(fmt_end_time(today));
+
+        let base_stock = [];
+
+        $.ajax({
+            url: uri['base-stock'],
+            type: 'GET',
+            async: false,
+            success: function (data) {
+                base_stock = data;
+            },
+            error: function (xhr, status, error) {
+                console.error('Failed to fetch stock data:', error);
+            }
+        });
+
+        const get_symbol = (symbol) => {
+            return base_stock.filter(stock =>
+                stock.name.includes(symbol) || stock.code.includes(symbol)
+            );
+        };
+
+        // 股票输入框事件处理
+        const symbolInput = $('#symbol-input');
+        const symbolResults = $('#symbol-results');
+        let currentSelectedIndex = -1;
+        let searchTimeout;
+
+        // 显示搜索结果
+        const showResults = (results) => {
+            symbolResults.empty().removeClass('hidden');
+            currentSelectedIndex = -1;
+
+            // 应用主题样式
+            if (isDarkTheme) {
+                symbolResults.addClass('dark-theme');
+            } else {
+                symbolResults.removeClass('dark-theme');
+            }
+
+            if (results.length === 0) {
+                const noResult = $('<div class="symbol-result-item">没有找到相关股票</div>');
+                if (isDarkTheme) {
+                    noResult.addClass('dark-theme');
+                }
+                symbolResults.append(noResult);
+                return;
+            }
+
+            results.forEach((stock, index) => {
+                const item = $('<div class="symbol-result-item"></div>');
+                item.text(`${stock.name}[${stock.code}]`);
+                item.data('stock', stock);
+
+                if (isDarkTheme) {
+                    item.addClass('dark-theme');
+                }
+
+                // 添加点击事件
+                item.click(() => {
+                    selectStock(stock);
+                });
+
+                symbolResults.append(item);
+            });
+        };
+
+        // 选择股票
+        const selectStock = (stock) => {
+            symbolInput.val(stock.name + '[' + stock.code + ']');
+            symbolResults.addClass('hidden');
+            localStorage.setItem('selectedStock', JSON.stringify(stock));
+            // 设置隐藏输入框的值为股票的symbol
+            $('#symbol-hidden').val(stock.symbol);
+        };
+
+        // 输入框输入事件
+        symbolInput.on('input', () => {
+            clearTimeout(searchTimeout);
+            const inputValue = symbolInput.val();
+            // 防抖：延迟搜索
+            searchTimeout = setTimeout(async () => {
+                const results = await get_symbol(inputValue);
+                showResults(results);
+            }, 100);
+        });
+
+        // 键盘导航
+        symbolInput.on('keydown', (e) => {
+            const items = symbolResults.find('.symbol-result-item:not(:contains(没有找到相关股票))');
+
+            if (symbolResults.hasClass('hidden')) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                currentSelectedIndex = Math.min(currentSelectedIndex + 1, items.length - 1);
+                highlightItem(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                currentSelectedIndex = Math.max(currentSelectedIndex - 1, 0);
+                highlightItem(items);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (currentSelectedIndex >= 0 && currentSelectedIndex < items.length) {
+                    const stock = items.eq(currentSelectedIndex).data('stock');
+                    selectStock(stock);
+                } else {
+                    symbolResults.addClass('hidden');
+                }
+            } else if (e.key === 'Escape') {
+                symbolResults.addClass('hidden');
+            }
+        });
+
+        // 高亮选中的项
+        const highlightItem = (items) => {
+            items.removeClass('highlight');
+            if (currentSelectedIndex >= 0 && currentSelectedIndex < items.length) {
+                const selectedItem = items.eq(currentSelectedIndex);
+                selectedItem.addClass('highlight');
+                // 滚动到选中项
+                symbolResults.scrollTop(selectedItem.position().top - symbolResults.position().top);
+            }
+        };
+
+        // 点击外部关闭结果列表
+        $(document).on('click', (e) => {
+            if (!$(e.target).closest('.symbol-input-wrapper').length) {
+                symbolResults.addClass('hidden');
+            }
+        });
+
+        // 从localStorage加载上次选择的股票
+        const savedStock = localStorage.getItem('selectedStock');
+        if (savedStock) {
+            try {
+                const stock = JSON.parse(savedStock);
+                symbolInput.val(stock.name + '[' + stock.code + ']');
+            } catch (error) {
+                console.error('加载保存的股票信息失败:', error);
+            }
+        }
+
+        // 从localStorage获取保存的配置或使用默认值
+        const getSavedConfig = () => {
+            const saved = localStorage.getItem('chartConfig');
+            if (saved) {
+                return JSON.parse(saved);
+            }
+            return {
+                gridCount: 4,
+                playInterval: 3,
+                theme: 'light',
+                showGrid: true,
+                showLegend: true,
+                dataPoints: 'show'
+            };
+        };
+
+        // 保存配置到localStorage
+        const saveConfigToStorage = (config) => {
+            localStorage.setItem('chartConfig', JSON.stringify(config));
+        };
+
+        // 获取已保存的配置
+        const savedConfig = getSavedConfig();
+        let gridCount = savedConfig.gridCount;
+
+        // 窗口大小变化时重新调整图表
+        window.addEventListener('resize', function () {
+            multiGridChart.resize();
+        });
+
+        // 主题切换功能
+        let isDarkTheme = false;
+
+        // 检查本地存储的主题设置
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            isDarkTheme = true;
+            $('body').addClass('dark-theme');
+            $('#theme-toggle').text('☀️');
+        }
+
+        $('#theme-toggle').click(function () {
+            if (!isDarkTheme) {
+                // 切换到深色主题
+                $('body').addClass('dark-theme');
+                $(this).text('☀️');
+                localStorage.setItem('theme', 'dark');
+                isDarkTheme = true;
+            } else {
+                // 切换到浅色主题
+                $('body').removeClass('dark-theme');
+                $(this).text('🌙');
+                localStorage.setItem('theme', 'light');
+                isDarkTheme = false;
+            }
+
+            // 重新设置图表主题
+            const currentOption = multiGridChart.getOption();
+            if (currentOption && currentOption.series && currentOption.series.length > 0) {
+                // 重新生成配置以应用新主题
+                $('#query-btn').trigger('click');
+            }
+        });
+
+        // 因子库选择变化时联动更新因子下拉列表
+        $('#factor-database-select').change(function () {
+            const dbVolume = $(this).val();
+            const factorData = JSON.parse(localStorage.getItem('factorData')) || [];
+
+            const selectedDb = factorData.find(db => db.db_volume === dbVolume);
+            if (selectedDb) {
+                updateFactorOptions(selectedDb.factors);
+            }
+        });
+
+        const initTheme = () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                $('body').addClass('dark-theme');
+                $('#theme-toggle').text('☀️');
+                isDarkTheme = true;
+            } else {
+                $('body').removeClass('dark-theme');
+                $('#theme-toggle').text('🌙');
+                isDarkTheme = false;
+            }
+        };
+
+        // 初始化主题
+        initTheme();
+
+        // 模拟后台函数init_factor_data()
+        const init_factor_data = () => {
+            return [
+                {
+                    "db_name": "TICK",
+                    "db_volume": "tick",
+                    "factors": [
+                        {
+                            "name": "成交价 [PRICE]",
+                            "volume": "price",
+                        },
+                        {
+                            "name": "开盘价 [OPEN]",
+                            "volume": "open",
+                        },
+                        {
+                            "name": "最高价 [HIGH]",
+                            "volume": "high",
+                        },
+                        {
+                            "name": "最低价 [LOW]",
+                            "volume": "low",
+                        },
+                        {
+                            "name": "成交量 [VOLUME]",
+                            "volume": "last-volume",
+                        },
+                        {
+                            "name": "成交额 [AMOUNT]",
+                            "volume": "last-amount",
+                        }
+                    ]
+                },
+                {
+                    "db_name": "ANALYSIS",
+                    "db_volume": "analysis",
+                    "factors": [
+                        {
+                            "name": "前驱值 [PEB]",
+                            "volume": "前驱值",
+                        },
+                        {
+                            "name": "最高价 [PSD]",
+                            "volume": "最高价",
+                        },
+                        {
+                            "name": "后驱值 [PIB]",
+                            "volume": "后驱值",
+                        }
+                    ]
+                }
+            ];
+        };
+
+        // 初始化因子库和因子下拉列表
+        const initFactorSelect = () => {
+            const factorData = init_factor_data();
+            const dbSelect = $('#factor-database-select');
+            const factorSelect = $('#factor-select');
+
+            // 清空现有选项
+            dbSelect.empty();
+            factorSelect.empty();
+
+            // 添加因子库选项
+            factorData.forEach(db => {
+                dbSelect.append($('<option>', {
+                    value: db.db_volume,
+                    text: db.db_name
+                }));
+            });
+
+            // 初始化第一个因子库的因子
+            if (factorData.length > 0) {
+                updateFactorOptions(factorData[0].factors);
+            }
+
+            // 保存到本地存储
+            localStorage.setItem('factorData', JSON.stringify(factorData));
+        };
+
+        // 根据选择的因子库更新因子选项
+        const updateFactorOptions = (factors) => {
+            const factorSelect = $('#factor-select');
+            factorSelect.empty();
+
+            factors.forEach(factor => {
+                factorSelect.append($('<option>', {
+                    value: factor.volume,
+                    text: factor.name
+                }));
+            });
+        };
+
+        // 初始化因子库和因子下拉列表
+        initFactorSelect();
+
+        // 初始化并同步grid-select和grid-count下拉列表
+        const syncGridSelects = () => {
+            const savedConfig = getSavedConfig();
+            const gridValue = savedConfig.gridCount || 4;
+
+            // 首先确保grid-select有完整的选项
+            if ($('#grid-select option').length === 0) {
+                for (let i = 0; i < gridValue; i++) {
+                    $('#grid-select').append($('<option>', {
+                        value: i,
+                        text: `数据视图[${i + 1}]`
+                    }));
+                }
+            }
+
+            $('#grid-select').val(0);
+            $('#grid-count').val(gridValue);
+        };
+
+        // 同步grid-select和grid-count下拉列表
+        syncGridSelects();
+
+        // 当grid-select变化时，同步到grid-count
+        $('#grid-select').change(function () {
+            const value = $(this).val();
+            $('#grid-count').val(value);
+        });
+
+        // 图表配置模板
+        const getMultiGridChartOption = () => {
+            const isDark = $('body').hasClass('dark-theme');
+            const textColor = isDark ? '#e4e7ed' : '#606266';
+            const axisLineColor = isDark ? '#4c4d4f' : '#e4e7ed';
+            const splitLineColor = isDark ? '#3d3d3d' : '#f5f7fa';
+            const backgroundColor = isDark ? '#1e1e1e' : '#fff';
+
+            const availableHeight = 100 - 8; // 减少顶部预留空间
+            const gridHeight = (availableHeight - (gridCount - 1) * 2) / gridCount;
+
+            // 生成grid配置
+            const grids = [];
+            for (let i = 0; i < gridCount; i++) {
+                grids.push({
+                    id: `grid${i}`,
+                    left: '1%',
+                    right: '1%',
+                    top: (2 + i * (gridHeight + 2.8)) + '%',
+                    height: gridHeight + '%',
+                    containLabel: true
+                });
+            }
+
+            // 生成xAxis配置
+            const xAxes = [];
+            for (let i = 0; i < gridCount; i++) {
+                xAxes.push({
+                    gridIndex: i,
+                    type: 'category',
+                    boundaryGap: false,
+                    data: [],
+                    axisLine: {lineStyle: {color: axisLineColor}},
+                    axisLabel: {color: textColor, fontSize: 10},
+                    axisTick: {show: false}
+                });
+            }
+
+            // 生成yAxis配置
+            const yAxes = [];
+            for (let i = 0; i < gridCount; i++) {
+                yAxes.push({
+                    gridIndex: i,
+                    type: 'value',
+                    scale: true,
+                    boundaryGap: false,
+                    splitArea: {
+                        show: true
+                    },
+                    nameTextStyle: {color: textColor, fontSize: 12},
+                    axisLine: {lineStyle: {color: axisLineColor}},
+                    axisLabel: {color: textColor, fontSize: 10},
+                    splitLine: savedConfig.showGrid ? {lineStyle: {color: splitLineColor}} : {show: false}
+                });
+            }
+
+            // 根据数据点显示配置调整样式
+            if (savedConfig.dataPoints === 'hide') {
+                series.forEach(s => {
+                    s.showSymbol = false;
+                });
+            } else if (savedConfig.dataPoints === 'hover') {
+                series.forEach(s => {
+                    s.showSymbol = false;
+                    s.emphasis = {
+                        showSymbol: true,
+                        symbolSize: 6
+                    };
+                });
+            }
+
+            return {
+                backgroundColor: backgroundColor,
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: isDark ? 'rgba(45, 45, 45, 0.9)' : 'rgba(50, 50, 50, 0.9)',
+                    borderColor: isDark ? '#4c4d4f' : '#333',
+                    textStyle: {color: isDark ? '#e4e7ed' : '#fff'},
+                    axisPointer: {
+                        type: 'cross',
+                        link: [{xAxisIndex: Array.from({length: gridCount}, (_, i) => i)}]
+                    }
+                },
+
+                legend: savedConfig.showLegend ? {
+                    data: [],
+                    top: 2,
+                    left: 'center',
+                    itemGap: 10,
+                    textStyle: {
+                        color: textColor,
+                        fontSize: 12
+                    }
+                } : {show: false},
+
+                axisPointer: {
+                    link: [{xAxisIndex: Array.from({length: gridCount}, (_, i) => i)}]
+                },
+                dataZoom: [
+                    {
+                        type: 'inside',
+                        xAxisIndex: Array.from({length: gridCount}, (_, i) => i),
+                        start: 0,
+                        end: 100,
+                        filterMode: 'filter'
+                    },
+                    {
+                        type: 'slider',
+                        show: true,
+                        top: '96%',
+                        height: 12,
+                        realtime: true,
+                        start: 0,
+                        end: 100,
+                        borderRadius: 0,
+                        handleSize: '100%',
+                        xAxisIndex: Array.from({length: gridCount}, (_, i) => i),
+                        brushStyle: {borderType: [5, 10], borderWidth: 0}
+                    }
+                ],
+                grid: grids,
+                xAxis: xAxes,
+                yAxis: yAxes,
+                series: []
+            };
+        };
+
+        const option = getMultiGridChartOption();
+
+        multiGridChart.setOption(option, true);
+
+        // 从数据库更新查询历史记录数量显示
+        function updateHistoryCountFromDB() {
+            db.query_history.count().then(count => {
+                $('#history-count').text(count);
+            }).catch(error => {
+                console.error('获取查询记录数量失败:', error);
+            });
+        }
+
+        updateHistoryCountFromDB()
+
+        // 自动播放功能
+        let isPlaying = false;
+        let playInterval;
+
+        let play_data = {}
+
+        $('#play-btn').click(function () {
+
+            if (query_list.length === 0) {
+                alert('请先保存查询！');
+                return;
+            }
+
+            // 清除之前的播放间隔
+            if (playInterval) {
+                clearInterval(playInterval);
+            }
+
+            let query = query_list[query_list.length - 1];
+            console.log(query);
+
+            // 获取对应的系列数据
+            let targetSeries = option.series.find(s => s.name === query.cs);
+            if (!targetSeries) {
+                alert('未找到对应的系列数据');
+                return;
+            }
+
+            // 保存原始数据并清空当前数据
+            play_data[query.cs] = [...targetSeries.data]; // 使用展开运算符创建副本
+            targetSeries.data = [];
+
+            // 更新图表
+            multiGridChart.setOption({
+                series: [{
+                    name: query.cs,
+                    data: targetSeries.data
+                }]
+            }, {replaceMerge: ['series']});
+
+            let play_index = 0;
+
+            playInterval = setInterval(function () {
+                if (play_index < play_data[query.cs].length) {
+                    console.log(play_data[query.cs][play_index]);
+                    // 正确的数据推送方式，去掉多余的数组嵌套
+                    targetSeries.data.push(play_data[query.cs][play_index]);
+
+                    // 使用 setOption 更新数据
+                    multiGridChart.setOption({
+                        series: [
+                            {
+                                data:targetSeries
+                            }
+                        ]
+                    },true);
+
+                    play_index++;
+                } else {
+                    // 播放完成，清除间隔
+                    clearInterval(playInterval);
+                    playInterval = null;
+                }
+            }, 500);
+
+            // if (isPlaying) {
+            //     // 暂停播放
+            //     clearInterval(playInterval);
+            //     $(this).text('▶'); // 播放图标
+            //     isPlaying = false;
+            // } else {
+            //     // 开始播放
+            //     $(this).text('⏸'); // 暂停图标
+            //     isPlaying = true;
+            //
+            //     // 每隔3秒自动点击下一条按钮
+            //     playInterval = setInterval(function () {
+            //         $('#next-btn').trigger('click');
+            //     }, 3000);
+            // }
+        });
+
+        // 当点击上一条或下一条按钮时，如果正在播放，重新计时
+        $('#prev-btn, #next-btn').click(function () {
+            if (isPlaying) {
+                clearInterval(playInterval);
+                playInterval = setInterval(function () {
+                    $('#next-btn').trigger('click');
+                }, 3000);
+            }
+        });
+
+        const query_list = [];
+
+        // 查询按钮点击事件
+        $('#query-btn').click(function () {
+
+            if (isPlaying) {
+                clearInterval(playInterval);
+                $('#play-btn').text('▶');
+                isPlaying = false;
+            }
+
+            const startTime = $('#start-time').val();
+            const endTime = $('#end-time').val();
+
+            const fdb = $('#factor-database-select').val();
+            const tb = $('#symbol-hidden').val();
+            const cs = $('#factor-select').val();
+
+            const grid = parseInt($('#grid-select').val());
+            const viewType = $('#view-type-select').val();
+
+            if (!startTime || !endTime) {
+                alert('请选择开始时间和结束时间');
+                return;
+            }
+
+            if (new Date(startTime) >= new Date(endTime)) {
+                alert('开始时间必须早于结束时间');
+                return;
+            }
+
+            // 禁用查询按钮
+            $(this).prop('disabled', true).text('查询中...');
+
+            // 显示加载状态
+            $('#chart-loading').show();
+
+            $.ajax({
+                url: uri['factor-query'],
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    "db": fdb,
+                    "tb": tb,
+                    "cs": cs,
+                    "start_time": new Date(startTime).getTime() / 1000,
+                    "end_time": new Date(endTime).getTime() / 1000,
+                }),
+                success: function (response) {
+                    console.log(response);
+                    option.xAxis[grid].data = response.data['created_at'];
+                    option.legend.data.push(cs);
+                    option.series.push(
+                        {
+                            name: cs,
+                            type: viewType,
+                            xAxisIndex: grid,
+                            yAxisIndex: grid,
+                            data: response.data.data,
+                            smooth: true,
+                            symbolSize: 3,
+                            showSymbol: false,
+                            symbol: 'circle',
+                            sampling: 'lttb',
+                            lineStyle: {color: '#409eff', width: 0.8},
+                            itemStyle: {color: '#409eff'}
+                        },
+                    )
+
+                    multiGridChart.setOption(option, true);
+
+                    let query_record = {
+                        time: new Date().getTime(),
+                        db: fdb,
+                        tb: tb,
+                        cs: cs,
+                        grid: grid,
+                        line_width: parseFloat($('#line-width').val()),
+                        color: $('#series-color').val(),
+                        view_type: viewType,
+                        start_time: new Date(startTime).getTime() / 1000,
+                        end_time: new Date(endTime).getTime() / 1000,
+                    }
+
+                    query_list.push(query_record)
+
+                    db.query_history.add(query_record).then(() => {
+                        updateHistoryCountFromDB();
+                    }).catch(error => {
+                        console.error('保存查询记录失败:', error);
+                    });
+                },
+                error: function (xhr, status, error) {
+                    $('#chart-loading').hide();
+                    $('#query-btn').prop('disabled', false).text('查询数据');
+                    console.error('查询错误:', error);
+                },
+                complete: function () {
+                    $('#chart-loading').hide();
+                    $('#query-btn').prop('disabled', false).text('查询数据');
+                }
+            })
+
+        });
+
+        $('#cg-btn').click(function () {
+
+            cs = $('#factor-select').val();
+
+            option.series.forEach(series => {
+                if (series.name === cs) {
+                    series.type === 'line' ? series.type = 'bar' : series.type = 'line';
+                    console.log(series.type);
+                }
+            });
+
+            console.log(option.series);
+
+            multiGridChart.setOption(option, true);
+        });
+
+        $('#delete-btn').click(function () {
+            cs = $('#factor-select').val();
+
+            const legend_list = option.legend.data;
+            const index = legend_list.indexOf(cs);
+            if (index > -1) {
+                option.legend.data.splice(index, 1);
+                multiGridChart.setOption(option, true);
+            }
+
+            // 查找名称对应的索引
+            const cs_index = option.series.findIndex(series => series.name === cs);
+
+            // 存在则删除
+            if (cs_index !== -1) {
+                option.series.splice(cs_index, 1)
+                // multiGridChart.clear();
+                multiGridChart.setOption(option, true);
+            }
+        });
+
+        // 配置模态框功能
+        const configModal = $('#config-modal');
+        const configBtn = $('#config-btn');
+        const cancelConfigBtn = $('#cancel-config');
+        const saveConfigBtn = $('#save-config');
+
+        // 打开配置模态框
+        configBtn.click(function () {
+            configModal.show();
+            // 根据当前设置初始化配置项
+            $('#play-interval').val(playInterval ? playInterval / 1000 : 3);
+            if (isDarkTheme) {
+                $('#chart-theme').val('dark');
+            } else {
+                $('#chart-theme').val('light');
+            }
+            // 添加网格数量选择器的初始化
+            $('#grid-count').val(savedConfig.gridCount);
+
+            // 添加其他配置项的初始化
+            $('#show-grid').prop('checked', savedConfig.showGrid);
+            $('#show-legend').prop('checked', savedConfig.showLegend);
+            $('#data-points').val(savedConfig.dataPoints);
+        });
+
+        // 关闭配置模态框
+        cancelConfigBtn.click(function () {
+            configModal.hide();
+        });
+
+        // 保存配置
+        saveConfigBtn.click(function () {
+            // 获取配置值
+            const interval = parseInt($('#play-interval').val()) * 1000;
+            const theme = $('#chart-theme').val();
+            const showGrid = $('#show-grid').is(':checked');
+            const showLegend = $('#show-legend').is(':checked');
+            const dataPoints = $('#data-points').val();
+            // 添加获取网格数量的逻辑
+            const newGridCount = parseInt($('#grid-count').val());
+
+            // 更新配置对象
+            const newConfig = {
+                gridCount: newGridCount,
+                playInterval: interval / 1000,
+                theme: theme,
+                showGrid: showGrid,
+                showLegend: showLegend,
+                dataPoints: dataPoints
+            };
+
+            // 保存配置到localStorage
+            saveConfigToStorage(newConfig);
+
+            // 应用主题设置
+            if (theme === 'dark' && !isDarkTheme) {
+                $('#theme-toggle').trigger('click');
+            } else if (theme === 'light' && isDarkTheme) {
+                $('#theme-toggle').trigger('click');
+            }
+
+            // 应用自动播放间隔设置
+            if (isPlaying) {
+                clearInterval(playInterval);
+                playInterval = setInterval(function () {
+                    $('#next-btn').trigger('click');
+                }, interval);
+            }
+
+            // 如果网格数量改变，更新全局变量并重新查询数据以刷新图表
+            if (newGridCount !== gridCount) {
+                gridCount = newGridCount;
+                let grid_select = $('#grid-select')
+                grid_select.empty();
+                grid_select.val(newGridCount);
+
+                for (let i = 1; i <= newGridCount; i++) {
+                    grid_select.append($('<option>', {
+                        value: i,
+                        text: `数据视图[${i}]`
+                    }));
+                }
+
+                $('#query-btn').trigger('click'); // 重新查询数据以更新图表
+            }
+
+            // 这里可以添加更多配置项的应用逻辑
+            console.log('保存配置:', {
+                interval: interval / 1000,
+                theme: theme,
+                showGrid: showGrid,
+                showLegend: showLegend,
+                dataPoints: dataPoints,
+                gridCount: newGridCount
+            });
+
+            // 关闭模态框
+            configModal.hide();
+        });
+
+        // 点击模态框外部关闭模态框
+        configModal.click(function (event) {
+            if (event.target === configModal[0]) {
+                configModal.hide();
+            }
+        });
+
+        // 修改显示模态框的代码，根据series类型显示/隐藏线条粗细配置
+        $('#color-config-btn').click(function () {
+            const cs = $('#factor-select').val();
+            if (!cs) {
+                alert('请先选择一个指标');
+                return;
+            }
+
+            const series = option.series.find(s => s.name === cs);
+            if (series) {
+                $('#series-color').val(series.itemStyle?.color || '#000000');
+
+                // 如果是线图，显示线条粗细配置并设置当前值
+                if (series.type === 'line') {
+                    $('#line-width-group').show();
+                    $('#line-width').val(series.lineStyle?.width || 2);
+                    $('#line-width-value').text($('#line-width').val());
+                } else {
+                    $('#line-width-group').hide();
+                }
+            }
+
+            $('#color-modal').show();
+        });
+
+        // 修改保存配置的代码
+        $('#save-color').click(function () {
+            const color = $('#series-color').val();
+            const lineWidth = parseFloat($('#line-width').val());
+            const cs = $('#factor-select').val();
+
+            option.series.forEach(series => {
+                if (series.name === cs) {
+                    series.itemStyle = series.itemStyle || {};
+                    series.itemStyle.color = color;
+
+                    // 如果是线图，设置线条颜色和粗细
+                    if (series.type === 'line') {
+                        series.lineStyle = series.lineStyle || {};
+                        series.lineStyle.color = color;
+                        series.lineStyle.width = lineWidth;
+                    }
+                }
+            });
+
+            multiGridChart.setOption(option, true);
+            $('#color-modal').hide();
+        });
+
+        // 添加线条粗细值显示
+        $('#line-width').on('input', function () {
+            $('#line-width-value').text($(this).val());
+        });
+
+        // 取消颜色选择
+        $('#cancel-color').click(function () {
+            $('#color-modal').hide();
+        });
+
+        // 点击模态框外部关闭
+        $('#color-modal').click(function (event) {
+            if (event.target === $('#color-modal')[0]) {
+                $('#color-modal').hide();
+            }
+        });
+
+        // 显示历史记录
+        function showHistory() {
+            const tbody = $('#history-table tbody');
+            tbody.empty();
+            //  query_history: '++time, db, tb, cs, grid, line_width, color, view_type, start_time, end_time',
+            db.query_history.orderBy('time').reverse().toArray().then(records => {
+                records.forEach(record => {
+                    const row = $('<tr>');
+                    row.append(`<td>${record.tb}</td>`);
+                    // 格式化开始时间，精确到秒
+                    const startTime = new Date(record.start_time * 1000).toLocaleString('zh-CN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false
+                    });
+                    row.append(`<td>${startTime}</td>`);
+                    // 格式化结束时间，精确到秒
+                    const endTime = new Date(record.end_time * 1000).toLocaleString('zh-CN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false
+                    });
+                    row.append(`<td>${endTime}</td>`);
+                    row.append(`<td>${record.db}</td>`);
+                    row.append(`<td>${record.cs}</td>`);
+                    row.append(`<td>${record.view_type}</td>`);
+                    row.append(`<td style="background-color:${record.color}; width:20px;"></td>`);
+                    row.append(`<td>${record.view_type === 'line' ? record.line_width : '-'}</td>`);
+                    tbody.append(row);
+                });
+
+                $('#history-modal').show();
+            });
+        }
+
+        // 点击状态栏显示历史记录
+        $('#query-history-div').click(showHistory);
+
+        $('#clear-history').click(() => {
+            if (confirm('确定要清空所有查询历史记录吗？')) {
+                $('#history-table tbody').empty();
+                db.query_history.clear().then(() => {
+                    updateHistoryCountFromDB()
+                });
+            }
+            $('#history-modal').hide();
+        });
+
+        function saveLayoutToHistory() {
+
+            if (query_list.length === 0) {
+                window.alert('请先添加查询');
+                return;
+            }
+
+            if (gridCount <= 0) {
+                window.alert('请先选择网格数');
+                return;
+            }
+
+            const layout = {
+                grid_count: gridCount,
+                queries: query_list,
+                save_time: Date.now()
+            };
+
+            db.page_layout.add(layout).then(() => {
+                updateLayoutHistoryCount();
+            });
+        }
+
+        $('#save-page-layout-btn').click(saveLayoutToHistory)
+
+        $('#layout-history-div').click(function () {
+                db.page_layout.orderBy('save_time').reverse().toArray().then(records => {
+                    records.forEach(record => {
+                        console.log(record)
+                    })
+                })
+            }
+        )
+
+        // 更新页面布局历史记录数量显示
+        function updateLayoutHistoryCount() {
+            db.page_layout.count().then(count => {
+                $('#layout-history-count').text(count);
+            });
+        }
+
+        // 初始化时更新计数
+        updateLayoutHistoryCount();
+
+        // 更新时间函数
+        function updateCurrentTime() {
+            const now = new Date();
+            const timeString = now.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+            $('#current-time').text(timeString);
+        }
+
+        // 初始更新时间并设置定时器
+        updateCurrentTime();
+        setInterval(updateCurrentTime, 1000);
+
+        $('#close-history').click(() => {
+            $('#history-modal').hide();
+        })
+
+    });
+</script>
+</body>
+
+</html>

@@ -1,0 +1,742 @@
+/**
+ * 双Grid ECharts布局 - 专用样式文件
+ * 基于设计文档实现的现代化双Grid布局系统
+ * 
+ * 布局分配：
+ * - 上部数据视图：60% (全显示) / 97% (下部隐藏)
+ * - 下部数据视图：37% (全显示) / 0% (隐藏)
+ * - 工具状态栏：3% (固定)
+ */
+
+/* ==================== 根变量定义 ==================== */
+:root {
+    /* 布局比例变量 */
+    --upper-view-height-full: 60%;
+    --upper-view-height-expanded: 97%;
+    --lower-view-height-visible: 37%;
+    --lower-view-height-hidden: 0%;
+    --toolbar-height-fixed: 3%;
+    
+    /* 动画和过渡 */
+    --layout-transition-duration: 300ms;
+    --layout-transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
+    --button-transition-duration: 150ms;
+    
+    /* 双Grid专用颜色 */
+    --grid-bg-color: #ffffff;
+    --grid-border-color: #e8e8e8;
+    --grid-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --toolbar-bg-color: #fafafa;
+    --toolbar-border-color: #d9d9d9;
+    
+    /* 按钮颜色系统 */
+    --btn-primary-bg: #1890ff;
+    --btn-primary-hover: #40a9ff;
+    --btn-secondary-bg: #52c41a;
+    --btn-secondary-hover: #73d13d;
+    --btn-warning-bg: #faad14;
+    --btn-warning-hover: #ffc53d;
+    --btn-info-bg: #722ed1;
+    --btn-info-hover: #9254de;
+    
+    /* 状态指示器颜色 */
+    --status-connected: #52c41a;
+    --status-disconnected: #ff4d4f;
+    --status-connecting: #faad14;
+    
+    /* 字体大小 */
+    --font-size-toolbar: 12px;
+    --font-size-button: 11px;
+    --font-size-status: 10px;
+}
+
+/* ==================== 页面容器布局 ==================== */
+.page-container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--grid-bg-color);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow: hidden;
+}
+
+/* ==================== 上部数据视图区域 ==================== */
+.upper-data-view {
+    height: var(--upper-view-height-full);
+    background: var(--grid-bg-color);
+    border-bottom: 1px solid var(--grid-border-color);
+    box-shadow: var(--grid-shadow);
+    transition: height var(--layout-transition-duration) var(--layout-transition-easing);
+    overflow: hidden;
+    position: relative;
+}
+
+.upper-data-view.expanded {
+    height: var(--upper-view-height-expanded);
+}
+
+.grid1-chart-container {
+    width: 100%;
+    height: 100%;
+    padding: 8px;
+    background: var(--grid-bg-color);
+}
+
+.chart-display {
+    width: 100%;
+    height: 100%;
+    border-radius: 6px;
+    background: var(--grid-bg-color);
+    position: relative;
+}
+
+/* ==================== 下部数据视图区域 ==================== */
+.lower-data-view {
+    height: var(--lower-view-height-visible);
+    background: var(--grid-bg-color);
+    border-bottom: 1px solid var(--grid-border-color);
+    box-shadow: var(--grid-shadow);
+    transition: all var(--layout-transition-duration) var(--layout-transition-easing);
+    overflow: hidden;
+    position: relative;
+}
+
+.lower-data-view.hidden {
+    height: var(--lower-view-height-hidden);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.grid2-chart-container {
+    width: 100%;
+    height: 100%;
+    padding: 8px;
+    background: var(--grid-bg-color);
+}
+
+/* ==================== 工具状态栏 ==================== */
+.toolbar-status-bar {
+    height: var(--toolbar-height-fixed);
+    min-height: 32px;
+    background: var(--toolbar-bg-color);
+    border-top: 1px solid var(--toolbar-border-color);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    font-size: var(--font-size-toolbar);
+    box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.06);
+    position: relative;
+    z-index: 100;
+}
+
+.toolbar-left,
+.toolbar-center,
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.toolbar-left {
+    flex: 1;
+    justify-content: flex-start;
+}
+
+.toolbar-center {
+    flex: 1;
+    justify-content: center;
+}
+
+.toolbar-right {
+    flex: 1;
+    justify-content: flex-end;
+}
+
+/* ==================== 切换按钮 ==================== */
+.toggle-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--grid-bg-color);
+    border: 1px solid var(--grid-border-color);
+    border-radius: 4px;
+    font-size: var(--font-size-button);
+    cursor: pointer;
+    transition: all var(--button-transition-duration) ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.toggle-button:hover {
+    background: var(--btn-primary-bg);
+    color: white;
+    border-color: var(--btn-primary-bg);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(24, 144, 255, 0.2);
+}
+
+.toggle-button:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-button.hiding {
+    background: var(--btn-warning-bg);
+    color: white;
+    border-color: var(--btn-warning-bg);
+}
+
+.toggle-button.hiding:hover {
+    background: var(--btn-warning-hover);
+    border-color: var(--btn-warning-hover);
+}
+
+.button-icon {
+    font-size: 14px;
+    transition: transform var(--button-transition-duration) ease;
+}
+
+.toggle-button.hiding .button-icon {
+    transform: rotate(180deg);
+}
+
+.button-text {
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* ==================== 连接状态指示器 ==================== */
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid var(--grid-border-color);
+    border-radius: 4px;
+    font-size: var(--font-size-status);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--status-disconnected);
+    animation: pulse 2s infinite;
+}
+
+.status-dot.connected {
+    background: var(--status-connected);
+}
+
+.status-dot.connecting {
+    background: var(--status-connecting);
+}
+
+.status-text {
+    font-weight: 500;
+    color: #666;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* ==================== 状态信息显示 ==================== */
+.status-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--grid-border-color);
+    font-size: var(--font-size-status);
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.info-label {
+    color: #8c8c8c;
+    font-weight: normal;
+}
+
+.info-value {
+    color: #262626;
+    font-weight: 500;
+}
+
+.info-separator {
+    color: var(--grid-border-color);
+    font-weight: normal;
+}
+
+/* ==================== 工具按钮 ==================== */
+.additional-tools {
+    display: flex;
+    gap: 8px;
+}
+
+.tool-button {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border: 1px solid var(--grid-border-color);
+    border-radius: 4px;
+    font-size: var(--font-size-button);
+    cursor: pointer;
+    transition: all var(--button-transition-duration) ease;
+    background: var(--grid-bg-color);
+    color: #595959;
+    min-width: 60px;
+    justify-content: center;
+}
+
+.tool-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.tool-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.tool-button.primary {
+    background: var(--btn-primary-bg);
+    color: white;
+    border-color: var(--btn-primary-bg);
+}
+
+.tool-button.primary:hover:not(:disabled) {
+    background: var(--btn-primary-hover);
+    border-color: var(--btn-primary-hover);
+}
+
+.tool-button.secondary {
+    background: var(--btn-secondary-bg);
+    color: white;
+    border-color: var(--btn-secondary-bg);
+}
+
+.tool-button.secondary:hover:not(:disabled) {
+    background: var(--btn-secondary-hover);
+    border-color: var(--btn-secondary-hover);
+}
+
+.tool-button.warning {
+    background: var(--btn-warning-bg);
+    color: white;
+    border-color: var(--btn-warning-bg);
+}
+
+.tool-button.warning:hover:not(:disabled) {
+    background: var(--btn-warning-hover);
+    border-color: var(--btn-warning-hover);
+}
+
+.tool-button.info {
+    background: var(--btn-info-bg);
+    color: white;
+    border-color: var(--btn-info-bg);
+}
+
+.tool-button.info:hover:not(:disabled) {
+    background: var(--btn-info-hover);
+    border-color: var(--btn-info-hover);
+}
+
+.btn-icon {
+    font-size: 12px;
+}
+
+.btn-text {
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* ==================== 加载遮罩 ==================== */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(2px);
+}
+
+.loading-content {
+    text-align: center;
+    padding: 24px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #f0f0f0;
+    border-top: 3px solid var(--btn-primary-bg);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+    color: #595959;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* ==================== 通知消息 ==================== */
+.notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9998;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 300px;
+}
+
+.notification {
+    padding: 12px 16px;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-size: 13px;
+    font-weight: 500;
+    animation: slideInRight 0.3s ease;
+    cursor: pointer;
+}
+
+.notification.success {
+    background: #f6ffed;
+    color: #52c41a;
+    border: 1px solid #b7eb8f;
+}
+
+.notification.error {
+    background: #fff2f0;
+    color: #ff4d4f;
+    border: 1px solid #ffccc7;
+}
+
+.notification.warning {
+    background: #fffbe6;
+    color: #faad14;
+    border: 1px solid #ffe58f;
+}
+
+.notification.info {
+    background: #e6f7ff;
+    color: #1890ff;
+    border: 1px solid #91d5ff;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* ==================== 模态框 ==================== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9997;
+    backdrop-filter: blur(2px);
+}
+
+.modal-content {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    max-width: 400px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--grid-border-color);
+    background: #fafafa;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #262626;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #8c8c8c;
+    line-height: 1;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-close:hover {
+    color: #262626;
+}
+
+.modal-body {
+    padding: 20px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #595959;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--grid-border-color);
+    background: #fafafa;
+}
+
+.btn {
+    padding: 6px 16px;
+    border: 1px solid var(--grid-border-color);
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all var(--button-transition-duration) ease;
+    background: white;
+    color: #595959;
+}
+
+.btn.primary {
+    background: var(--btn-primary-bg);
+    color: white;
+    border-color: var(--btn-primary-bg);
+}
+
+.btn.secondary {
+    background: #f5f5f5;
+    color: #595959;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* ==================== 响应式设计 ==================== */
+@media (max-width: 768px) {
+    .toolbar-status-bar {
+        flex-wrap: wrap;
+        height: auto;
+        min-height: 48px;
+        padding: 8px 12px;
+    }
+    
+    .toolbar-left,
+    .toolbar-center,
+    .toolbar-right {
+        flex: 1 1 100%;
+        justify-content: center;
+        margin: 4px 0;
+    }
+    
+    .additional-tools {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .tool-button {
+        min-width: 80px;
+    }
+    
+    .status-info {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .notification-container {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .grid1-chart-container,
+    .grid2-chart-container {
+        padding: 4px;
+    }
+    
+    .toolbar-status-bar {
+        font-size: 10px;
+        padding: 6px 8px;
+    }
+    
+    .toggle-button,
+    .tool-button {
+        padding: 4px 6px;
+        font-size: 10px;
+    }
+    
+    .button-text,
+    .btn-text {
+        display: none;
+    }
+    
+    .status-info .info-label {
+        display: none;
+    }
+}
+
+/* ==================== 打印样式 ==================== */
+@media print {
+    .toolbar-status-bar {
+        display: none;
+    }
+    
+    .page-container {
+        height: auto;
+    }
+    
+    .upper-data-view {
+        height: 50vh;
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+    
+    .lower-data-view {
+        height: 40vh;
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+    
+    .loading-overlay,
+    .notification-container,
+    .modal-overlay {
+        display: none;
+    }
+}
+
+/* ==================== 高对比度模式 ==================== */
+@media (prefers-contrast: high) {
+    :root {
+        --grid-border-color: #000000;
+        --toolbar-border-color: #000000;
+        --grid-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+    
+    .toggle-button,
+    .tool-button {
+        border-width: 2px;
+    }
+    
+    .status-dot {
+        border: 2px solid currentColor;
+    }
+}
+
+/* ==================== 动画减少偏好 ==================== */
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --layout-transition-duration: 0ms;
+        --button-transition-duration: 0ms;
+    }
+    
+    .spinner,
+    .status-dot {
+        animation: none;
+    }
+    
+    .notification {
+        animation: none;
+    }
+}
+
+/* ==================== 深色模式支持 ==================== */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --grid-bg-color: #1f1f1f;
+        --grid-border-color: #424242;
+        --toolbar-bg-color: #2a2a2a;
+        --toolbar-border-color: #424242;
+        --grid-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+    
+    .page-container {
+        background: #1a1a1a;
+        color: #e0e0e0;
+    }
+    
+    .modal-content {
+        background: #2a2a2a;
+        color: #e0e0e0;
+    }
+    
+    .modal-header,
+    .modal-footer {
+        background: #333333;
+        border-color: #424242;
+    }
+    
+    .loading-content {
+        background: #2a2a2a;
+        color: #e0e0e0;
+    }
+    
+    .btn {
+        background: #3a3a3a;
+        color: #e0e0e0;
+        border-color: #424242;
+    }
+}
