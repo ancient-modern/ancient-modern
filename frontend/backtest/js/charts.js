@@ -456,48 +456,48 @@ class ChartsManager {
         // 启用坐标轴联动
         echarts.connect('chartGroup');
 
-        // 手动绑定缩放联动事件
-        this.ppieChart.on('dataZoom', (params) => {
-            if (params.batch) {
-                // 批量缩放事件
-                params.batch.forEach(item => {
-                    this.vvieChart.dispatchAction({
-                        type: 'dataZoom',
-                        dataZoomIndex: item.dataZoomIndex,
-                        start: item.start,
-                        end: item.end
-                    });
-                });
-            } else {
-                // 单个缩放事件
-                this.vvieChart.dispatchAction({
-                    type: 'dataZoom',
-                    dataZoomIndex: params.dataZoomIndex,
-                    start: params.start,
-                    end: params.end
-                });
-            }
-        });
-
-        this.vvieChart.on('dataZoom', (params) => {
-            if (params.batch) {
-                params.batch.forEach(item => {
-                    this.ppieChart.dispatchAction({
-                        type: 'dataZoom',
-                        dataZoomIndex: item.dataZoomIndex,
-                        start: item.start,
-                        end: item.end
-                    });
-                });
-            } else {
-                this.ppieChart.dispatchAction({
-                    type: 'dataZoom',
-                    dataZoomIndex: params.dataZoomIndex,
-                    start: params.start,
-                    end: params.end
-                });
-            }
-        });
+        // // 手动绑定缩放联动事件
+        // this.ppieChart.on('dataZoom', (params) => {
+        //     if (params.batch) {
+        //         // 批量缩放事件
+        //         params.batch.forEach(item => {
+        //             this.vvieChart.dispatchAction({
+        //                 type: 'dataZoom',
+        //                 dataZoomIndex: item.dataZoomIndex,
+        //                 start: item.start,
+        //                 end: item.end
+        //             });
+        //         });
+        //     } else {
+        //         // 单个缩放事件
+        //         this.vvieChart.dispatchAction({
+        //             type: 'dataZoom',
+        //             dataZoomIndex: params.dataZoomIndex,
+        //             start: params.start,
+        //             end: params.end
+        //         });
+        //     }
+        // });
+        //
+        // this.vvieChart.on('dataZoom', (params) => {
+        //     if (params.batch) {
+        //         params.batch.forEach(item => {
+        //             this.ppieChart.dispatchAction({
+        //                 type: 'dataZoom',
+        //                 dataZoomIndex: item.dataZoomIndex,
+        //                 start: item.start,
+        //                 end: item.end
+        //             });
+        //         });
+        //     } else {
+        //         this.ppieChart.dispatchAction({
+        //             type: 'dataZoom',
+        //             dataZoomIndex: params.dataZoomIndex,
+        //             start: params.start,
+        //             end: params.end
+        //         });
+        //     }
+        // });
 
         console.log('🔗 图表联动已启用');
     }

@@ -247,7 +247,7 @@ class ChartComponents {
                 left: '3%',
                 right: '3%',
                 top: '3%',
-                bottom: '12%'
+                bottom: '14%'
             },
             xAxis: {
                 type: 'category',
@@ -467,7 +467,7 @@ class ChartComponents {
                 left: '1.5%',
                 right: '1.5%',
                 top: '3%',
-                bottom: '20%'
+                bottom: '22%'
             },
             xAxis: {
                 type: 'category',

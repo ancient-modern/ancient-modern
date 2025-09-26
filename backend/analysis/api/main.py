@@ -6,6 +6,7 @@ from pathlib import Path
 
 import clickhouse_connect
 import duckdb
+import socketio
 import sqlglot as engine
 from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -31,6 +32,8 @@ logger.add(
            "{function}:{line} - <level>{message}</level>",
     level=cfg['logger_level']
 )
+
+logger = logger.bind(module=__name__, class_name="main")
 
 
 def get_data_directory():
@@ -85,6 +88,61 @@ def clickhouse_client(request: Request):
 
 def duckdb_client(request: Request):
     return request.app.state.duckdb
+
+
+# Socket.IO服务器配置
+sio = socketio.AsyncServer(
+    async_mode='asgi',
+    cors_allowed_origins='*',
+    logger=True,
+    engineio_logger=True
+)
+
+
+class GlobalState:
+    """websocket 全局状态管理类"""
+
+    def __init__(self):
+        self.connected_clients: set = set()
+
+    def add_client(self, sid: str):
+        """添加客户端连接"""
+        self.connected_clients.add(sid)
+        logger.info(f"客户端连接: {sid}, 当前连接数: {len(self.connected_clients)}")
+
+    def remove_client(self, sid: str):
+        """移除客户端连接"""
+        self.connected_clients.discard(sid)
+        logger.info(f"客户端断开: {sid}, 当前连接数: {len(self.connected_clients)}")
+
+
+state = GlobalState()
+
+
+@sio.event
+async def connect(sid, environ):
+    """客户端连接事件"""
+    state.add_client(sid)
+    await sio.emit('connection_response', {'data': 'Connected successfully'})
+
+    # 发送连接确认和当前状态
+    await sio.emit('connection_status', {
+        'status': 'connected',
+        'server_time': datetime.now().isoformat()
+    }, room=sid)
+
+
+@sio.event
+async def disconnect(sid):
+    """客户端断开事件"""
+    state.remove_client(sid)
+    logger.info(f"客户端断开: {sid}, 当前连接数: {len(state.connected_clients)}")
+
+
+socket_app = socketio.ASGIApp(socketio_server=sio, other_asgi_app=app,socketio_path='analysis.io',)
+
+# 挂载 Socket.IO 应用
+app.mount('/analysis.io', socket_app)
 
 
 @app.get("/api/analysis/v1/data/base-stock")
