@@ -58,7 +58,7 @@ class TradingDataStorage {
                 query = query.and(item => item.timestamp >= startTime && item.timestamp <= endTime);
             }
             
-            return await query.limit(limit).reverse().toArray();
+            return query.limit(limit).reverse().toArray();
         } catch (error) {
             console.error('获取交易数据失败:', error);
             throw error;
@@ -88,7 +88,7 @@ class TradingDataStorage {
                 query = query.and(item => item.timestamp >= startTime && item.timestamp <= endTime);
             }
             
-            return await query.limit(limit).reverse().toArray();
+            return query.limit(limit).reverse().toArray();
         } catch (error) {
             console.error('获取指标数据失败:', error);
             throw error;

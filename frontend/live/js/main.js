@@ -314,7 +314,7 @@ class TradingApp {
         // 每30秒添加新的数据点
         this.updateInterval = setInterval(async () => {
             await this.addNewDataPoint();
-        }, 1000);
+        }, 5000);
     }
 
     /**
@@ -347,12 +347,15 @@ class TradingApp {
                 volume,
                 date: new Date(now).toISOString().split('T')[0]
             };
+
+            console.log('添加新数据点:', newData);
             
             // 保存新数据
             await window.dataStorage.saveTradingData(newData);
             
             // 获取最新的数据集合
             const allData = await window.dataStorage.getTradingData(this.currentSymbol, null, null, 200);
+            console.log('获取最新数据集合:', allData);
             allData.reverse(); // 按时间正序排列
             
             // 更新图表
